@@ -1,5 +1,7 @@
 <?php
 
+use Smalot\PdfParser\Parser;
+
 class PdfDirectoryParser
 {
     /**
@@ -15,16 +17,32 @@ class PdfDirectoryParser
      */
     private $listPDFs;
     /**
+     * @var null
+     */
+    private $smalotPdfParser;
+    /**
+     * @var null
+     */
+    private $log;
+    /**
+     * @var null
+     */
+    private $logIterator;
+    /**
      * PdfDirectoryParser constructor.
      * @param null $dir
+     * @param bool $log
      */
-    public function __construct($dir = null)
+    public function __construct($dir = null, $log = false)
     {
         if(!is_null($dir) && $this->validateDir($dir)) {
-            $this->dir = $dir;
+            $this->dir = preg_replace('/\/$/i', '', $dir);
         } else {
             $this->dir = null;
         }
+        $this->smalotPdfParser = new Parser();
+        $this->log = $log;
+        $this->logIterator = 0;
     }
 
     /**
@@ -67,7 +85,7 @@ class PdfDirectoryParser
         $links = scandir($this->dir);
         $this->listPDFs = [];
         foreach ($links as $link) {
-            preg_match_all('/\.pdf/i', $link, $matches);
+            preg_match_all('/\.pdf$/i', $link, $matches);
             if(count($matches[0]) > 0) {
                 $this->listPDFs[] = $link;
             }
@@ -82,6 +100,11 @@ class PdfDirectoryParser
         $this->createTxtDir();
         $this->getListFiles();
 
+        foreach ($this->listPDFs as $pdfFile) {
+            $this->parseFile($pdfFile);
+        }
+
+        return $this->logIterator;
     }
 
     /**
@@ -91,6 +114,13 @@ class PdfDirectoryParser
      */
     public function parseFile($link)
     {
+        $fullPdfLink = $this->dir . '/' . $link;
+        $newFileName = $this->dir . '/txt/' . preg_replace('/\.pdf$/i','.txt', $link);
+        $content = $this->smalotPdfParser->parseFile($fullPdfLink)->getText();
 
+        file_put_contents($newFileName, print_r($content, true));
+        if($this->log) {
+            echo ++$this->logIterator . ') ' . $link . '  OK' . PHP_EOL;
+        }
     }
 }
