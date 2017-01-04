@@ -118,7 +118,8 @@ class PdfDirectoryParser
         $newFileName = $this->dir . '/txt/' . preg_replace('/\.pdf$/i','.txt', $link);
         $content = $this->smalotPdfParser->parseFile($fullPdfLink)->getText();
 
-        file_put_contents($newFileName, print_r($content, true));
+        $content = mb_convert_encoding($content, "ASCII", "auto");
+        file_put_contents($newFileName, $content);
         if($this->log) {
             echo ++$this->logIterator . ') ' . $link . '  OK' . PHP_EOL;
         }
