@@ -119,9 +119,21 @@ class PdfDirectoryParser
         $content = $this->smalotPdfParser->parseFile($fullPdfLink)->getText();
 
         $content = mb_convert_encoding($content, "ASCII", "auto");
+        $content = $this->deleteLineWrapping($content);
         file_put_contents($newFileName, $content);
         if($this->log) {
             echo ++$this->logIterator . ') ' . $link . '  OK' . PHP_EOL;
         }
+    }
+
+    /**
+     * @param $text
+     * @return mixed
+     */
+    public function deleteLineWrapping($text)
+    {
+        $text = preg_replace('/(\w)-\n/m', '$1', $text);
+
+        return $text;
     }
 }
