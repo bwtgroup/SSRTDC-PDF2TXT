@@ -35,6 +35,8 @@ class PdfDirectoryParser
      */
     public function __construct($dir = null, $log = false)
     {
+        ini_set('memory_limit', '-1');
+
         if(!is_null($dir) && $this->validateDir($dir)) {
             $this->dir = preg_replace('/\/$/i', '', $dir);
         } else {
@@ -67,6 +69,15 @@ class PdfDirectoryParser
     }
 
     /**
+     * Create directory for txt files.
+     */
+    public function createLogDir()
+    {
+        if(!is_dir($this->dir . '/logs')) {
+            mkdir($this->dir . '/logs');
+        }
+    }
+    /**
      * Check is dir exist.
      *
      * @param $dir
@@ -98,10 +109,28 @@ class PdfDirectoryParser
     public function run()
     {
         $this->createTxtDir();
+        if($this->log) {
+            $this->createLogDir();
+
+        }
         $this->getListFiles();
 
         foreach ($this->listPDFs as $pdfFile) {
-            $this->parseFile($pdfFile);
+            $result = 'OK';
+            try {
+                $this->parseFile($pdfFile);
+            } catch (\Exception $e) {
+                $result = 'FAIL';
+            }
+
+            if($this->log) {
+                echo ++$this->logIterator . ') ' . $pdfFile . '  ' .$result. PHP_EOL;
+                if($result == 'OK') {
+                    file_put_contents($this->dir . '/logs/logs.txt', print_r(++$this->logIterator . ') ' . $pdfFile, true), FILE_APPEND);
+                } else {
+                    file_put_contents($this->dir . '/logs/errors.txt', print_r(++$this->logIterator . ') ' . $pdfFile, true), FILE_APPEND);
+                }
+            }
         }
 
         return $this->logIterator;
@@ -121,9 +150,6 @@ class PdfDirectoryParser
         $content = mb_convert_encoding($content, "ASCII", "auto");
         $content = $this->deleteLineWrapping($content);
         file_put_contents($newFileName, $content);
-        if($this->log) {
-            echo ++$this->logIterator . ') ' . $link . '  OK' . PHP_EOL;
-        }
     }
 
     /**
