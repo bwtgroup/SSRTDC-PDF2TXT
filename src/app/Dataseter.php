@@ -8,6 +8,10 @@ class Dataseter
     private $order;
     private $incrsize;
     private $fMap;
+    /**
+     * @var string
+     */
+    private $saveType;
 
     /**
      * Dataseter constructor.
@@ -15,14 +19,16 @@ class Dataseter
      * @param $dfolder
      * @param $order
      * @param $incrsize
+     * @param string $saveType
      */
-    public function __construct($pfolder, $dfolder, $order, $incrsize)
+    public function __construct($pfolder, $dfolder, $order, $incrsize, $saveType = 'file')
     {
 
         $this->pfolder = $pfolder;
         $this->dfolder = $dfolder;
         $this->order = $order;
         $this->incrsize = $incrsize;
+        $this->saveType = $saveType;
     }
 
     /**
@@ -32,7 +38,7 @@ class Dataseter
     {
         $this->getFilesMap();
         $this->order();
-        $this->saveToFiles();
+        $this->save();
     }
 
     /**
@@ -131,23 +137,83 @@ class Dataseter
             $item = array_shift($fMap);
             $j++;
             $fContent = file_get_contents($this->pfolder . '/' . $fName);
+            $fContent = $this->refactorText($fContent);
             $contentCurr .= $fContent . PHP_EOL . PHP_EOL;
             if ($j == $this->incrsize) {
                 $i++;
                 $j = 0;
-                $contentAll .= $contentCurr;
+                $contentAll = $contentCurr;
                 $contentCurr = '';
-                file_put_contents($this->dfolder . '/D' . $i . '.txt', print_r($contentAll, true));
+                if($i>1) {
+                    copy($this->dfolder . '/D' . ($i - 1) . '.txt', $this->dfolder . '/D' . $i . '.txt');
+                }
+                file_put_contents($this->dfolder . '/D' . $i . '.txt', print_r($contentAll, true), FILE_APPEND);
             }
         }
 
         if ($contentCurr != '') {
             $i++;
             $j = 0;
-            $contentAll .= $contentCurr;
+            $contentAll = $contentCurr;
             $contentCurr = '';
-            file_put_contents($this->dfolder . '/D' . $i . '.txt', print_r($contentAll, true));
+            if($i>1) {
+                copy($this->dfolder . '/D' . ($i - 1) . '.txt', $this->dfolder . '/D' . $i . '.txt');
+            }
+            file_put_contents($this->dfolder . '/D' . $i . '.txt', print_r($contentAll, true), FILE_APPEND);
         }
+    }
+
+    public function save()
+    {
+        switch ($this->saveType) {
+            case 'file':
+                $this->saveToFiles();
+                break;
+            case 'dir':
+                $this->saveToDirectories();
+                break;
+            default:
+                $this->saveToFiles();
+                break;
+        }
+    }
+    public function saveToDirectories()
+    {
+        $fMap = $this->fMap;
+        $i = 1;
+        @mkdir($this->dfolder . '/D' . $i);
+        $j = 0;
+        $total = count($fMap);
+        while (count($fMap) > 0) {
+            $fName = array_keys($fMap)[0];
+            copy($this->pfolder . '/' . $fName, $this->dfolder . '/D' . $i . '/' . $fName);
+            $j++;
+            if ($j == $this->incrsize) {
+                $i++;
+                $j = 0;
+                if($i>1) {
+                    $this->recurse_copy($this->dfolder . '/D' . ($i - 1), $this->dfolder . '/D' . $i );
+                }
+                echo ($total - count($fMap)) . '/' . $total . PHP_EOL;
+            }
+        }
+        echo ($total - count($fMap)) . '/' . $total . PHP_EOL;
+    }
+
+    public function recurse_copy($src,$dst) {
+        $dir = opendir($src);
+        @mkdir($dst);
+        while(false !== ( $file = readdir($dir)) ) {
+            if (( $file != '.' ) && ( $file != '..' )) {
+                if ( is_dir($src . '/' . $file) ) {
+                    $this->recurse_copy($src . '/' . $file,$dst . '/' . $file);
+                }
+                else {
+                    copy($src . '/' . $file,$dst . '/' . $file);
+                }
+            }
+        }
+        closedir($dir);
     }
 
     /**
@@ -166,5 +232,15 @@ class Dataseter
         $array = $new;
 
         return true;
+    }
+
+    public function refactorText($content)
+    {
+        $content = preg_replace('/\r\n/', ' ', $content);
+        $content = preg_replace('/\n/', ' ', $content);
+        $content = preg_replace('/\. /', '.'.PHP_EOL, $content);
+
+
+        return $content;
     }
 }

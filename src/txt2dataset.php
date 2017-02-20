@@ -34,6 +34,6 @@ $cmd->option('incrsize')
     ->describedAs('Enter order. Can be "chrono", "rev-chrono", "bi-dir", "random"');
 
 if(isset($cmd['pfolder']) && isset($cmd['dfolder']) && isset($cmd['order']) && isset($cmd['incrsize'])) {
-    $datasets = new Dataseter($cmd['pfolder'], $cmd['dfolder'] , $cmd['order'], $cmd['incrsize']);
+    $datasets = new Dataseter($cmd['pfolder'], $cmd['dfolder'] , $cmd['order'], $cmd['incrsize'], 'file');
     $datasets->run();
 }
