@@ -186,6 +186,7 @@ class Dataseter
         $total = count($fMap);
         while (count($fMap) > 0) {
             $fName = array_keys($fMap)[0];
+            $fItem = array_shift($fMap);
             copy($this->pfolder . '/' . $fName, $this->dfolder . '/D' . $i . '/' . $fName);
             $j++;
             if ($j == $this->incrsize) {
