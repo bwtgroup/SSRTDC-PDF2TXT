@@ -112,9 +112,11 @@ class Dataseter
         $result = [];
         $arr = $array;
         while (count($arr) > 0) {
-            $result[] = array_shift($arr);
+            $a = array_keys($arr)[0];
+            $result[$a] = array_shift($arr);
             if (count($arr) > 0) {
-                $result[] = array_pop($arr);
+                $a = array_keys($arr)[count($arr)-1];
+                $result[$a] = array_pop($arr);
             }
         }
 
